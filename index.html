@@ -1,0 +1,72 @@
+<html>
+	<head>
+		<title>Angry Birds</title>
+		<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+		<style type="text/css">
+		#debug {
+			font-family: sans-serif;
+			font-size: 25px;
+		}
+		#cannon {
+			position: fixed;
+			top: 400px;
+		}
+		#cannon-body {
+			position: absolute;
+			width: 200px;
+		}
+		#cannon-base {
+			position: absolute;
+			width: 150px;
+			top: 70px;
+			left: 10px;
+		}
+		.marker {
+			position: fixed;
+			width: 10px;
+			z-index: -1;
+		}
+		</style>
+	</head>
+	<body>
+		<div id="cannon">
+			<img id="cannon-body" src="img/cannon-body.png"></img>
+			<img id="cannon-base" src="img/cannon-base.png"></img>
+		</div>
+		<div id="markers"></div>
+		<div id="debug"></div>
+	</body>
+	<script type="text/javascript">
+		var markersLimitX = 950;
+		var numberOfMarkers = 30;
+		var paraboleHeight = 0.02;
+		$(document).ready(function(){
+			for (var i=0; i < numberOfMarkers; i++)
+			{
+				$("#markers").append('<img id="marker'+i+'" class="marker" src="img/marker.png"></img>');
+				$("#marker"+i).css("top", -50);
+				$("#marker"+i).css("left", 100+(i*(markersLimitX/numberOfMarkers)));
+			}
+			$(document).mousemove(function(e){
+				var cannonRot = (e.pageY*0.14)-40;
+				var cannonRotMax = 0;
+				var cannonRotMin = -25;
+				$("#debug").html("X: "+e.pageX+" Y: "+e.pageY);
+				if ((cannonRot > cannonRotMin) && (cannonRot < cannonRotMax))
+				{
+					$("#cannon-body").css("transform", "rotate("+cannonRot+"deg)")
+					cannonRot = Math.abs(cannonRot);
+					//cannonRot += 40;
+					for (var i=0; i < numberOfMarkers; i++)
+					{
+						var left = parseInt($("#marker"+i).css("left"))-100;
+						var a = 0.03*(cannonRot*0.03)+0.02;
+						var height = Math.pow(((left*a)-((100/(a*10))*a)),2)+350-(cannonRot);
+						$("#marker"+i).css("top", height);
+					}
+				}
+				//UpdateMarkers
+			}); 
+		})
+	</script>
+</html>
