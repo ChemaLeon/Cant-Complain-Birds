@@ -1,45 +1,112 @@
 <html>
 	<head>
-		<title>Angry Birds</title>
-		<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+		<title>Can't Complain Birds</title>
 		<style type="text/css">
+		div {
+			-webkit-touch-callout: none;
+			-webkit-user-select: none;
+			-khtml-user-select: none;
+			-moz-user-select: none;
+			-ms-user-select: none;
+			user-select: none;
+		}
 		#debug {
 			font-family: sans-serif;
 			font-size: 25px;
 		}
+		#gamewrap {
+			background-color: gray;
+			width: 1280px;
+			height: 800px;
+			position: fixed;
+			top: 7px;
+			z-index = -1;
+		}
 		#cannon {
 			position: fixed;
-			top: 400px;
+			top: 725px;
 		}
 		#cannon-body {
 			position: absolute;
-			width: 200px;
+			width: 100;
+			top: 16px;
+			left: 12px;
 		}
 		#cannon-base {
 			position: absolute;
-			width: 150px;
-			top: 70px;
-			left: 10px;
+			width: 70px;
+			top: 52px;
+			left: 20px;
 		}
 		.marker {
 			position: fixed;
 			width: 10px;
-			z-index: -1;
+			z-index: 0;
+		}
+		.box {
+			position: fixed;
+			background: red;
+			opacity: 1;
+		}
+		.tempBox {
+			position: fixed;
+			background: red;
+			opacity: 0.5;
+		}
+		.staticBox {
+			position: fixed;
+			background: black;
+			opacity: 1;
 		}
 		</style>
 	</head>
 	<body>
+		<canvas id="canvas" width="1280" height="800"></canvas>
+		<div id="gamewrap"></div>
 		<div id="cannon">
 			<img id="cannon-body" src="img/cannon-body.png"></img>
 			<img id="cannon-base" src="img/cannon-base.png"></img>
 		</div>
 		<div id="markers"></div>
 		<div id="debug"></div>
+		<input type="range" name="widthSlider" id="widthSlider" value="50" min="2" max="100" onchange="changeBoxHeight(this.value)">
+		<input type="range" name="heightSlider" id="heightSlider" value="50" min="2" max="100" onchange="changeBoxWidth(this.value)">
 	</body>
+	<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+	<script type="text/javascript" src="js/Box2dWeb-2.1.a.3.min.js"></script>
 	<script type="text/javascript">
-		var markersLimitX = 950;
+	
+		var markersLimitX = 1200;
 		var numberOfMarkers = 30;
 		var paraboleHeight = 0.02;
+		
+		var worldWidth = 1280;
+		var worldHeight = 800;
+		var wallsWidth = 2;
+		var PhysicsToCSSOffset = 8;
+			
+		var worldScale = 30;
+		var physicalBoxes = [];
+		var offsetX = [];
+		var offsetY = [];
+		var startboxSizeX = 50;
+		var startboxSizeY = 50;
+		var boxBorder = 2;
+		var tempBoxDiv = new Box();
+		
+		var b2Vec2 = Box2D.Common.Math.b2Vec2;
+		var b2AABB = Box2D.Collision.b2AABB;
+		var b2BodyDef = Box2D.Dynamics.b2BodyDef;
+		var b2Body = Box2D.Dynamics.b2Body;
+		var b2FixtureDef = Box2D.Dynamics.b2FixtureDef;
+		var b2Fixture = Box2D.Dynamics.b2Fixture;
+		var b2World = Box2D.Dynamics.b2World;
+		var b2PolygonShape = Box2D.Collision.Shapes.b2PolygonShape;
+		var b2DebugDraw = Box2D.Dynamics.b2DebugDraw;
+		var world = new b2World(new b2Vec2(0, 10),true);
+			
+		var mouseDown;
+		
 		$(document).ready(function(){
 			for (var i=0; i < numberOfMarkers; i++)
 			{
@@ -61,12 +128,192 @@
 					{
 						var left = parseInt($("#marker"+i).css("left"))-100;
 						var a = 0.03*(cannonRot*0.03)+0.02;
-						var height = Math.pow(((left*a)-((100/(a*10))*a)),2)+350-(cannonRot);
+						var height = Math.pow(((left*a)-((100/(a*10))*a)),2)+660-(cannonRot);
 						$("#marker"+i).css("top", height);
 					}
 				}
 				//UpdateMarkers
 			}); 
+			init();
 		})
+		
+		function init() {
+			
+			//debugDraw();      
+			
+			var boundingBox1 = new Box((worldWidth*0.5), worldHeight, worldWidth, wallsWidth);
+			var boundingBox2 = new Box((worldWidth*0.5), 0, worldWidth, wallsWidth);
+			var boundingBox3 = new Box(0, (worldHeight*0.5), wallsWidth, worldHeight);
+			var boundingBox4 = new Box(worldWidth, (worldHeight*0.5), wallsWidth, worldHeight);
+			
+			createBox(boundingBox1, b2Body.b2_staticBody);
+			createBox(boundingBox2, b2Body.b2_staticBody);
+			createBox(boundingBox3, b2Body.b2_staticBody);
+			createBox(boundingBox4, b2Body.b2_staticBody);
+			
+			window.setInterval(update,1000/120);
+		}
+		
+		function update() {
+			if (keyisdown) {
+				world.Step(1/600,10,10);
+			} else {
+				world.Step(1/60,10,10);
+			}
+			//world.DrawDebugData();
+			var i = physicalBoxes.length-1;
+			for (var b = world.GetBodyList(); b; b = b.GetNext())
+			{
+				if (b.GetNext() != null && b.GetType() == 2)
+				{
+					physicalBoxes[i].style.top = ((b.GetPosition().y*worldScale)+offsetY[i])+"px";
+					physicalBoxes[i].style.left = ((b.GetPosition().x*worldScale)+offsetX[i])+"px";
+					physicalBoxes[i].style.webkitTransform = "rotate("+(b.GetAngle()*(180/Math.PI))+"deg)";
+				}
+				i--;
+			}
+			//console.log(world.GetBodyCount());
+			world.ClearForces();
+		}
+		
+		document.addEventListener("mouseup",function(e) {
+			if (mouseDown)
+			{
+				spawnBox(tempBoxDiv);
+				mouseDown = false;
+			}
+			//removeTempBox();
+		});
+		
+		document.getElementById("gamewrap").addEventListener("mousedown",function(e) {
+			mouseDown = true;
+			createTempBox(e.clientX, e.clientY, startboxSizeX, startboxSizeY);
+		});
+		
+		document.getElementById("gamewrap").addEventListener("mousemove",function(e) {
+			if (mouseDown)
+			{
+				updateTempBox(e.clientX, e.clientY);
+			}
+		});
+		
+		function changeBoxWidth(value)
+		{
+			startboxSizeX = value;
+		}
+		
+		function changeBoxHeight(value)
+		{
+			startboxSizeY = value;
+		}
+		
+		function Box(xPos, yPos, width, height)
+		{
+			this.x = xPos;
+			this.y = yPos;
+			this.width = width;
+			this.height = height;
+			this.div = null;
+		}
+		
+		function createTempBox(xPos, yPos, width, height) {
+			var div = document.createElement("div");
+			div.className = "tempBox";
+			div.style.left = (xPos - PhysicsToCSSOffset)-(width/2)+PhysicsToCSSOffset+"px";
+			div.style.top =  (yPos - PhysicsToCSSOffset)-(height/2)+PhysicsToCSSOffset+"px";
+			div.style.width = (width-boxBorder)+"px";
+			div.style.height = (height-boxBorder)+"px";
+			div.style.border = boxBorder+"px solid black";
+			document.getElementById("gamewrap").appendChild(div);
+			tempBoxDiv.x = xPos;
+			tempBoxDiv.y = yPos;
+			tempBoxDiv.width = width;
+			tempBoxDiv.height = height;
+			tempBoxDiv.div = div;
+		}
+		
+		function updateTempBox(xPos, yPos) {
+			tempBoxDiv.x = xPos;
+			tempBoxDiv.y = yPos;
+			tempBoxDiv.div.style.left = (xPos - PhysicsToCSSOffset)-(tempBoxDiv.width/2)+PhysicsToCSSOffset+"px";
+			tempBoxDiv.div.style.top =  (yPos - PhysicsToCSSOffset)-(tempBoxDiv.height/2)+PhysicsToCSSOffset+"px";
+		}
+		
+		function removeTempBox() {
+			tempBoxDiv.div.remove();
+		}
+		
+		function spawnBox(box) {
+			var boxSizeX = startboxSizeX;
+			var boxSizeY = startboxSizeY;
+			var randomX = Math.random()*0;
+			var randomY = Math.random()*0;
+			boxSizeX += randomX;
+			boxSizeY += randomY;
+			box.x = (box.x-PhysicsToCSSOffset);
+			box.y = (box.y-PhysicsToCSSOffset);
+			createBox(box, b2Body.b2_dynamicBody);
+		}
+		
+		function createBox(box, type){
+			var bodyDef = new b2BodyDef;
+			bodyDef.type = type;
+			bodyDef.position.Set(box.x/worldScale,box.y/worldScale);
+			var polygonShape = new b2PolygonShape;
+			polygonShape.SetAsBox(box.width/2/worldScale,box.height/2/worldScale);
+			var fixtureDef = new b2FixtureDef;
+			fixtureDef.density = 1.0;
+			fixtureDef.friction = 0.6;
+			fixtureDef.restitution = 0.1;
+			fixtureDef.shape = polygonShape;
+			var body=world.CreateBody(bodyDef);
+			body.CreateFixture(fixtureDef);
+			if (type != b2Body.b2_staticBody)
+			{
+				releaseBox(box);
+			} else {
+				createDiv(box);
+			}
+		}
+		
+		function releaseBox(box) {
+			var div = document.createElement("div");
+			box.div.className = "box";
+			document.getElementById("gamewrap").appendChild(box.div);
+			physicalBoxes.push(box.div);
+			offsetX.push(-(box.width-(box.width/2))+PhysicsToCSSOffset);
+			offsetY.push(-(box.height-(box.height/2))+PhysicsToCSSOffset);
+		}
+		
+		function createDiv(box) {
+			var div = document.createElement("div");
+			div.className = "staticBox";
+			div.style.top = (box.y-(box.height/2)+PhysicsToCSSOffset)+"px";
+			div.style.left = (box.x-(box.width/2)+PhysicsToCSSOffset)+"px";
+			div.style.width = box.width+"px";
+			div.style.height = box.height+"px";
+			document.getElementById("gamewrap").appendChild(div);
+		}
+		
+		function debugDraw(){
+			var debugDraw = new b2DebugDraw();
+			debugDraw.SetSprite(document.getElementById("canvas").getContext("2d"));
+			debugDraw.SetDrawScale(30.0);
+			debugDraw.SetFillAlpha(1.0);
+			debugDraw.SetLineThickness(5.0);
+			debugDraw.SetFlags(b2DebugDraw.e_shapeBit | b2DebugDraw.e_jointBit);
+			world.SetDebugDraw(debugDraw);
+		}
+		
+		var keyisdown = false;
+		$('body').bind('keydown',function(e){
+			var keycode = 73;
+			if (e.which === keycode) {
+				keyisdown = true;
+			}
+		}).bind('keyup',function(){
+			keyisdown = false;
+		});
+		
 	</script>
 </html>
