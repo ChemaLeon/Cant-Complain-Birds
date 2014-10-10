@@ -15,36 +15,40 @@
 			font-size: 25px;
 		}
 		#gamewrap {
-			background-color: gray;
+			//background-color: gray;
 			width: 1280px;
 			height: 800px;
 			position: fixed;
 			top: 7px;
-			z-index = -1;
+			z-index = -2;
+			overflow: hidden;
 		}
 		#cannon {
 			position: fixed;
 			top: 725px;
 		}
 		#cannon-body {
+			-webkit-transform-origin: 27% 70%;
 			position: absolute;
 			width: 100;
-			top: 16px;
-			left: 12px;
+			top: 22px;
+			left: 15px;
+			z-index: 2;
 		}
 		#cannon-base {
 			position: absolute;
 			width: 70px;
 			top: 52px;
 			left: 20px;
+			z-index: 3;
 		}
 		.marker {
-			position: fixed;
-			width: 10px;
-			z-index: 0;
+			position: absolute;
+			width: 15px;
+			z-index: 1;
 		}
 		.box {
-			position: fixed;
+			position: absolute;
 			background: red;
 			opacity: 1;
 		}
@@ -62,23 +66,23 @@
 	</head>
 	<body>
 		<canvas id="canvas" width="1280" height="800"></canvas>
-		<div id="gamewrap"></div>
+		<div id="gamewrap"><div id="markers"></div></div>
 		<div id="cannon">
 			<img id="cannon-body" src="img/cannon-body.png"></img>
 			<img id="cannon-base" src="img/cannon-base.png"></img>
 		</div>
-		<div id="markers"></div>
+		
 		<div id="debug"></div>
-		<input type="range" name="widthSlider" id="widthSlider" value="50" min="2" max="100" onchange="changeBoxHeight(this.value)">
-		<input type="range" name="heightSlider" id="heightSlider" value="50" min="2" max="100" onchange="changeBoxWidth(this.value)">
+		<div id="shotMarker"></div>
+		<input type="range" name="widthSlider" id="widthSlider" value="50" min="2" max="300" onchange="changeBoxHeight(this.value)">
+		<input type="range" name="heightSlider" id="heightSlider" value="50" min="2" max="300" onchange="changeBoxWidth(this.value)">
 	</body>
 	<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
 	<script type="text/javascript" src="js/Box2dWeb-2.1.a.3.min.js"></script>
 	<script type="text/javascript">
-	
-		var markersLimitX = 1200;
-		var numberOfMarkers = 30;
-		var paraboleHeight = 0.02;
+		var frameRate = 60;
+		var numberOfMarkers = 20;
+		var markers = [];
 		
 		var worldWidth = 1280;
 		var worldHeight = 800;
@@ -106,40 +110,15 @@
 		var world = new b2World(new b2Vec2(0, 10),true);
 			
 		var mouseDown;
+		var cannonPower = 100;
 		
-		$(document).ready(function(){
-			for (var i=0; i < numberOfMarkers; i++)
-			{
-				$("#markers").append('<img id="marker'+i+'" class="marker" src="img/marker.png"></img>');
-				$("#marker"+i).css("top", -50);
-				$("#marker"+i).css("left", 100+(i*(markersLimitX/numberOfMarkers)));
-			}
-			$(document).mousemove(function(e){
-				var cannonRot = (e.pageY*0.14)-40;
-				var cannonRotMax = 0;
-				var cannonRotMin = -25;
-				$("#debug").html("X: "+e.pageX+" Y: "+e.pageY);
-				if ((cannonRot > cannonRotMin) && (cannonRot < cannonRotMax))
-				{
-					$("#cannon-body").css("transform", "rotate("+cannonRot+"deg)")
-					cannonRot = Math.abs(cannonRot);
-					//cannonRot += 40;
-					for (var i=0; i < numberOfMarkers; i++)
-					{
-						var left = parseInt($("#marker"+i).css("left"))-100;
-						var a = 0.03*(cannonRot*0.03)+0.02;
-						var height = Math.pow(((left*a)-((100/(a*10))*a)),2)+660-(cannonRot);
-						$("#marker"+i).css("top", height);
-					}
-				}
-				//UpdateMarkers
-			}); 
+		$(document).ready(function() {
 			init();
 		})
 		
 		function init() {
-			
-			//debugDraw();      
+			debugDraw();
+			createMarkers();			
 			
 			var boundingBox1 = new Box((worldWidth*0.5), worldHeight, worldWidth, wallsWidth);
 			var boundingBox2 = new Box((worldWidth*0.5), 0, worldWidth, wallsWidth);
@@ -151,23 +130,23 @@
 			createBox(boundingBox3, b2Body.b2_staticBody);
 			createBox(boundingBox4, b2Body.b2_staticBody);
 			
-			window.setInterval(update,1000/120);
+			window.setInterval(update,1000/frameRate);
 		}
 		
 		function update() {
 			if (keyisdown) {
 				world.Step(1/600,10,10);
 			} else {
-				world.Step(1/60,10,10);
+				world.Step(1/frameRate*2,10,10);
 			}
-			//world.DrawDebugData();
+			world.DrawDebugData();
 			var i = physicalBoxes.length-1;
 			for (var b = world.GetBodyList(); b; b = b.GetNext())
 			{
 				if (b.GetNext() != null && b.GetType() == 2)
 				{
-					physicalBoxes[i].style.top = ((b.GetPosition().y*worldScale)+offsetY[i])+"px";
-					physicalBoxes[i].style.left = ((b.GetPosition().x*worldScale)+offsetX[i])+"px";
+					physicalBoxes[i].style.top = ((b.GetPosition().y*worldScale))-(parseInt(physicalBoxes[i].style.width)/2)+"px";
+					physicalBoxes[i].style.left = ((b.GetPosition().x*worldScale))-(parseInt(physicalBoxes[i].style.height)/2)+"px";
 					physicalBoxes[i].style.webkitTransform = "rotate("+(b.GetAngle()*(180/Math.PI))+"deg)";
 				}
 				i--;
@@ -176,13 +155,13 @@
 			world.ClearForces();
 		}
 		
+		// -------------------------------- EVENT LISTENERS START -------------------------------- //
 		document.addEventListener("mouseup",function(e) {
 			if (mouseDown)
 			{
 				spawnBox(tempBoxDiv);
 				mouseDown = false;
 			}
-			//removeTempBox();
 		});
 		
 		document.getElementById("gamewrap").addEventListener("mousedown",function(e) {
@@ -191,24 +170,63 @@
 		});
 		
 		document.getElementById("gamewrap").addEventListener("mousemove",function(e) {
+			updateMarkers(e);
 			if (mouseDown)
 			{
 				updateTempBox(e.clientX, e.clientY);
 			}
 		});
 		
-		function changeBoxWidth(value)
-		{
+		document.getElementById("gamewrap").addEventListener("mousewheel", function(e) {
+			var delta = Math.max(-1, Math.min(1, (e.wheelDelta || -e.detail)));
+			cannonPower += delta;
+			updateMarkers(e);
+		});
+		// --------------------------------  EVENT LISTENERS END  -------------------------------- //
+		
+		function createMarkers() {
+			for (var i=0; i < numberOfMarkers; i++)
+			{
+				var img = document.createElement("img");
+				img.className = "marker";
+				img.src = "img/marker.png";
+				document.getElementById("markers").appendChild(img);
+				markers.push(img);
+			}
+		}
+		
+		function updateMarkers(e) {
+			var cannonOrigin = { x:50, y:777 };
+			var mouseOrigin = { x:e.clientX, y:e.clientY };
+			var deltaX = (mouseOrigin.x-cannonOrigin.x);
+			var deltaY = (mouseOrigin.y-cannonOrigin.y);
+			var angleInRadians =  Math.atan(deltaY / deltaX);
+			var angleInDegrees = angleInRadians * 180 / Math.PI;
+			//var shotMarker = document.getElementById("shotMarker");
+			var cannonBody = document.getElementById("cannon-body");
+			//shotMarker.style.left = cannonOrigin.x+"px";
+			//shotMarker.style.top = cannonOrigin.y+"px";
+			//shotMarker.style.width = (Math.sqrt(Math.pow(deltaX,2)+Math.pow(deltaY,2))-3)+"px";
+			//shotMarker.style.width = cannonPower+"px";
+			//shotMarker.style.height = 2+"px";
+			//shotMarker.style.transform = 'rotate('+angleInDegrees+'deg)';
+			cannonBody.style.transform = 'rotate('+angleInDegrees+'deg)';
+			for (var i = 0; i < markers.length; i++)
+			{
+				markers[i].style.left = cannonOrigin.x+(cannonPower*i*Math.cos(-angleInRadians))-7.5+"px";
+				markers[i].style.top = cannonOrigin.y-((cannonPower*i*Math.sin(-angleInRadians))-0.5*9.8*(Math.pow(i,2)))-7.5+"px";
+			}
+		}
+		
+		function changeBoxWidth(value) {
 			startboxSizeX = value;
 		}
 		
-		function changeBoxHeight(value)
-		{
+		function changeBoxHeight(value) {
 			startboxSizeY = value;
 		}
 		
-		function Box(xPos, yPos, width, height)
-		{
+		function Box(xPos, yPos, width, height) {
 			this.x = xPos;
 			this.y = yPos;
 			this.width = width;
@@ -239,10 +257,6 @@
 			tempBoxDiv.div.style.top =  (yPos - PhysicsToCSSOffset)-(tempBoxDiv.height/2)+PhysicsToCSSOffset+"px";
 		}
 		
-		function removeTempBox() {
-			tempBoxDiv.div.remove();
-		}
-		
 		function spawnBox(box) {
 			var boxSizeX = startboxSizeX;
 			var boxSizeY = startboxSizeY;
@@ -255,7 +269,7 @@
 			createBox(box, b2Body.b2_dynamicBody);
 		}
 		
-		function createBox(box, type){
+		function createBox(box, type) {
 			var bodyDef = new b2BodyDef;
 			bodyDef.type = type;
 			bodyDef.position.Set(box.x/worldScale,box.y/worldScale);
@@ -277,7 +291,7 @@
 		}
 		
 		function releaseBox(box) {
-			var div = document.createElement("div");
+			//var div = document.createElement("div");
 			box.div.className = "box";
 			document.getElementById("gamewrap").appendChild(box.div);
 			physicalBoxes.push(box.div);
