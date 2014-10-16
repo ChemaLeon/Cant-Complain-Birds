@@ -1,7 +1,11 @@
 <html>
 	<head>
 		<title>Can't Complain Birds</title>
+		<link rel="stylesheet" type="text/css" href="css/switch.css">
 		<style type="text/css">
+		body {
+			background-color: #eee;
+		}
 		div {
 			-webkit-touch-callout: none;
 			-webkit-user-select: none;
@@ -15,17 +19,18 @@
 			font-size: 25px;
 		}
 		#gamewrap {
-			//background-color: gray;
-			width: 1280px;
+			border-radius: 15px;
+			background-color: #bbb;
+			width: 1200px;
 			height: 800px;
-			position: fixed;
-			top: 7px;
+			position: absolute;
+			top: 8px;
 			z-index = -2;
 			overflow: hidden;
 		}
 		#cannon {
-			position: fixed;
-			top: 725px;
+			position: absolute;
+			top: 723px;
 		}
 		#cannon-body {
 			-webkit-transform-origin: 27% 70%;
@@ -44,29 +49,87 @@
 		}
 		.marker {
 			position: absolute;
-			width: 15px;
+			width: 10px;
 			z-index: 1;
+			opacity: 0.3;
 		}
 		.box {
 			position: absolute;
 			background: red;
 			opacity: 1;
+			border-radius: 10px;
+		}
+		.bullet {
+			position: absolute;
+			background: #52A3CC;
+			opacity: 1;
 		}
 		.tempBox {
-			position: fixed;
+			position: absolute;
 			background: red;
 			opacity: 0.5;
+			border-radius: 10px;
 		}
 		.staticBox {
-			position: fixed;
+			position: absolute;
 			background: black;
-			opacity: 1;
+			opacity: 0;
+		}
+		#sidebar {
+			position: absolute;
+			left: 1220px;
+			width: 300px;
+			height: 800px;
+			background-color: #ccc;
+			border-radius: 15px;
+			padding:0px;
+		}
+		.editor-switch .switch {
+			position: relative;
+			float: left;
+		}
+		.editor-switch .switch-label {
+			font-family: Bebas;
+			font-size: 21px;
+			margin: 0 40 0 0;
+			width: 100px;
+			float: left;
+			clear: left;
+		}
+		.editor-switch {
+			position: relative;
+			margin:15px;
+		}
+		@font-face {
+			font-family: Bebas;
+			src: url(css/BebasNeue.otf);
 		}
 		</style>
 	</head>
 	<body>
-		<canvas id="canvas" width="1280" height="800"></canvas>
-		<div id="gamewrap"><div id="markers"></div></div>
+		<!--<canvas id="canvas" width="1280" height="800" style="float: left;"></canvas>-->
+		<div id="editor">
+			<div id="sidebar">
+				<div class="editor-switch" id="editorModeSwitch">
+					<div class="switch-label">editor mode</div>
+					<div class="switch" >
+						<input id="cmn-toggle-1" class="cmn-toggle cmn-toggle-round" type="checkbox" onclick="switchEditorMode();">
+						<label for="cmn-toggle-1"></label>
+					</div>
+				</div>
+				<div class="editor-switch" id="snapToGridSwitch" style="display: none;">
+					<div class="switch-label">snap to grid</div>
+					<div class="switch" >
+						<input id="cmn-toggle-2" class="cmn-toggle cmn-toggle-round" type="checkbox" onclick="switchSnapToGrid();">
+						<label for="cmn-toggle-2"></label>
+					</div>
+				</div>
+			</div>
+			<div id="gamewrap">
+				<div id="markers">
+				</div>
+			</div>
+		</div>
 		<div id="cannon">
 			<img id="cannon-body" src="img/cannon-body.png"></img>
 			<img id="cannon-base" src="img/cannon-base.png"></img>
@@ -76,18 +139,19 @@
 		<div id="shotMarker"></div>
 		<input type="range" name="widthSlider" id="widthSlider" value="50" min="2" max="300" onchange="changeBoxHeight(this.value)">
 		<input type="range" name="heightSlider" id="heightSlider" value="50" min="2" max="300" onchange="changeBoxWidth(this.value)">
+		
 	</body>
 	<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
 	<script type="text/javascript" src="js/Box2dWeb-2.1.a.3.min.js"></script>
 	<script type="text/javascript">
 		var frameRate = 60;
-		var numberOfMarkers = 20;
+		var numberOfMarkers = 35;
 		var markers = [];
 		
-		var worldWidth = 1280;
+		var worldWidth = 1200;
 		var worldHeight = 800;
 		var wallsWidth = 2;
-		var PhysicsToCSSOffset = 8;
+		var PhysicsToCSSOffset = 0;
 			
 		var worldScale = 30;
 		var physicalBoxes = [];
@@ -95,7 +159,7 @@
 		var offsetY = [];
 		var startboxSizeX = 50;
 		var startboxSizeY = 50;
-		var boxBorder = 2;
+		var boxBorder = 0;
 		var tempBoxDiv = new Box();
 		
 		var b2Vec2 = Box2D.Common.Math.b2Vec2;
@@ -106,18 +170,24 @@
 		var b2Fixture = Box2D.Dynamics.b2Fixture;
 		var b2World = Box2D.Dynamics.b2World;
 		var b2PolygonShape = Box2D.Collision.Shapes.b2PolygonShape;
+		var b2CircleShape = Box2D.Collision.Shapes.b2CircleShape;
 		var b2DebugDraw = Box2D.Dynamics.b2DebugDraw;
 		var world = new b2World(new b2Vec2(0, 10),true);
 			
 		var mouseDown;
 		var cannonPower = 100;
 		
+		var editorMode = false;
+		var snapToGridSize = 1;
+		var angleInDegrees = 0;
+		var bulletWidth = 20;
+		
 		$(document).ready(function() {
 			init();
 		})
 		
 		function init() {
-			debugDraw();
+			//debugDraw();
 			createMarkers();			
 			
 			var boundingBox1 = new Box((worldWidth*0.5), worldHeight, worldWidth, wallsWidth);
@@ -134,19 +204,24 @@
 		}
 		
 		function update() {
-			if (keyisdown) {
-				world.Step(1/600,10,10);
+			if (editorMode) {
+				world.Step(0,10,10);
 			} else {
-				world.Step(1/frameRate*2,10,10);
+				if (keyisdown)
+				{
+					world.Step(1/600*2,10,10);
+				} else {
+					world.Step(1/frameRate*2,10,10);
+				}
 			}
-			world.DrawDebugData();
+			//world.DrawDebugData();
 			var i = physicalBoxes.length-1;
 			for (var b = world.GetBodyList(); b; b = b.GetNext())
 			{
 				if (b.GetNext() != null && b.GetType() == 2)
 				{
-					physicalBoxes[i].style.top = ((b.GetPosition().y*worldScale))-(parseInt(physicalBoxes[i].style.width)/2)+"px";
-					physicalBoxes[i].style.left = ((b.GetPosition().x*worldScale))-(parseInt(physicalBoxes[i].style.height)/2)+"px";
+					physicalBoxes[i].style.top = ((b.GetPosition().y*worldScale))-((parseInt(physicalBoxes[i].style.height)+(boxBorder*2))*0.5)+"px";
+					physicalBoxes[i].style.left = ((b.GetPosition().x*worldScale))-((parseInt(physicalBoxes[i].style.width)+(boxBorder*2))*0.5)+"px";
 					physicalBoxes[i].style.webkitTransform = "rotate("+(b.GetAngle()*(180/Math.PI))+"deg)";
 				}
 				i--;
@@ -157,23 +232,34 @@
 		
 		// -------------------------------- EVENT LISTENERS START -------------------------------- //
 		document.addEventListener("mouseup",function(e) {
-			if (mouseDown)
+			if (mouseDown && editorMode)
 			{
 				spawnBox(tempBoxDiv);
-				mouseDown = false;
 			}
+			mouseDown = false;
 		});
 		
 		document.getElementById("gamewrap").addEventListener("mousedown",function(e) {
 			mouseDown = true;
-			createTempBox(e.clientX, e.clientY, startboxSizeX, startboxSizeY);
+			if (editorMode)
+			{
+				createTempBox(e.clientX, e.clientY, startboxSizeX, startboxSizeY);
+			} else {
+				shootBullet();
+			}
 		});
 		
 		document.getElementById("gamewrap").addEventListener("mousemove",function(e) {
-			updateMarkers(e);
-			if (mouseDown)
+			if (!editorMode)
 			{
-				updateTempBox(e.clientX, e.clientY);
+				updateMarkers(e);
+			}
+			if (mouseDown && editorMode)
+			{
+				if (tempBoxDiv.div != null)
+				{
+					updateTempBox(e.clientX, e.clientY);
+				}
 			}
 		});
 		
@@ -183,6 +269,28 @@
 			updateMarkers(e);
 		});
 		// --------------------------------  EVENT LISTENERS END  -------------------------------- //
+		
+		function switchEditorMode() {
+			editorMode  = !editorMode;
+			if (editorMode)
+			{
+				document.getElementById("gamewrap").style.backgroundImage = "url(img/grid.png)";
+				document.getElementById("snapToGridSwitch").style.display = "";
+				
+			} else {
+				document.getElementById("gamewrap").style.backgroundImage = "";
+				document.getElementById("snapToGridSwitch").style.display = "none";
+			}
+		}
+		
+		function switchSnapToGrid() {
+			if (snapToGridSize == 1)
+			{
+				snapToGridSize = 25;
+			} else {
+				snapToGridSize = 1;
+			}
+		}
 		
 		function createMarkers() {
 			for (var i=0; i < numberOfMarkers; i++)
@@ -201,7 +309,7 @@
 			var deltaX = (mouseOrigin.x-cannonOrigin.x);
 			var deltaY = (mouseOrigin.y-cannonOrigin.y);
 			var angleInRadians =  Math.atan(deltaY / deltaX);
-			var angleInDegrees = angleInRadians * 180 / Math.PI;
+			angleInDegrees = angleInRadians * 180 / Math.PI;
 			//var shotMarker = document.getElementById("shotMarker");
 			var cannonBody = document.getElementById("cannon-body");
 			//shotMarker.style.left = cannonOrigin.x+"px";
@@ -213,8 +321,8 @@
 			cannonBody.style.transform = 'rotate('+angleInDegrees+'deg)';
 			for (var i = 0; i < markers.length; i++)
 			{
-				markers[i].style.left = cannonOrigin.x+(cannonPower*i*Math.cos(-angleInRadians))-7.5+"px";
-				markers[i].style.top = cannonOrigin.y-((cannonPower*i*Math.sin(-angleInRadians))-0.5*9.8*(Math.pow(i,2)))-7.5+"px";
+				markers[i].style.left = cannonOrigin.x+(cannonPower*i*Math.cos(-angleInRadians))-15+"px";
+				markers[i].style.top = cannonOrigin.y-((cannonPower*i*Math.sin(-angleInRadians))-0.5*9.8*(Math.pow(i,2)))-15+"px";
 			}
 		}
 		
@@ -235,12 +343,15 @@
 		}
 		
 		function createTempBox(xPos, yPos, width, height) {
+			tempBoxDiv = new Box();
 			var div = document.createElement("div");
 			div.className = "tempBox";
-			div.style.left = (xPos - PhysicsToCSSOffset)-(width/2)+PhysicsToCSSOffset+"px";
-			div.style.top =  (yPos - PhysicsToCSSOffset)-(height/2)+PhysicsToCSSOffset+"px";
-			div.style.width = (width-boxBorder)+"px";
-			div.style.height = (height-boxBorder)+"px";
+			xPos = xPos - xPos%snapToGridSize;
+			yPos = yPos - yPos%snapToGridSize;
+			div.style.left = (xPos - PhysicsToCSSOffset)-((width-(boxBorder*2))/2)+PhysicsToCSSOffset+"px";
+			div.style.top =  (yPos - PhysicsToCSSOffset)-((height-(boxBorder*2))/2)+PhysicsToCSSOffset+"px";
+			div.style.width = (width-(boxBorder*2))+"px";
+			div.style.height = (height-(boxBorder*2))+"px";
 			div.style.border = boxBorder+"px solid black";
 			document.getElementById("gamewrap").appendChild(div);
 			tempBoxDiv.x = xPos;
@@ -251,10 +362,10 @@
 		}
 		
 		function updateTempBox(xPos, yPos) {
-			tempBoxDiv.x = xPos;
-			tempBoxDiv.y = yPos;
-			tempBoxDiv.div.style.left = (xPos - PhysicsToCSSOffset)-(tempBoxDiv.width/2)+PhysicsToCSSOffset+"px";
-			tempBoxDiv.div.style.top =  (yPos - PhysicsToCSSOffset)-(tempBoxDiv.height/2)+PhysicsToCSSOffset+"px";
+			tempBoxDiv.x = xPos - xPos%snapToGridSize;
+			tempBoxDiv.y = yPos - yPos%snapToGridSize;
+			tempBoxDiv.div.style.left = (tempBoxDiv.x - PhysicsToCSSOffset)-((tempBoxDiv.width)/2)+PhysicsToCSSOffset+"px";
+			tempBoxDiv.div.style.top =  (tempBoxDiv.y - PhysicsToCSSOffset)-((tempBoxDiv.height)/2)+PhysicsToCSSOffset+"px";
 		}
 		
 		function spawnBox(box) {
@@ -290,13 +401,43 @@
 			}
 		}
 		
+		function shootBullet() {
+			var bodyDef = new b2BodyDef;
+			bodyDef.type = b2Body.b2_dynamicBody;
+			bodyDef.position.Set(35/worldScale,780/worldScale);
+			var circleShape = new b2CircleShape;
+			circleShape.SetRadius((bulletWidth*0.5)/worldScale);
+			var fixtureDef = new b2FixtureDef;
+			fixtureDef.density = 10.0;
+			fixtureDef.friction = 1.0;
+			fixtureDef.restitution = 0.5;
+			fixtureDef.shape = circleShape;
+			var body=world.CreateBody(bodyDef);
+			body.CreateFixture(fixtureDef);
+			var power = cannonPower*0.0654*fixtureDef.density;
+			var vector = new b2Vec2(Math.cos(angleInDegrees*(Math.PI/180))*power, Math.sin(angleInDegrees*(Math.PI/180))*power);
+    
+			body.ApplyImpulse(vector, body.GetWorldCenter());
+			
+			var div = document.createElement("div");
+			div.className = "bullet";
+			div.style.top = -50+"px";
+			div.style.left = -50+"px";
+			div.style.width = bulletWidth+"px";
+			div.style.height = bulletWidth+"px";
+			div.style.borderRadius = bulletWidth*0.5+"px";
+			document.getElementById("gamewrap").appendChild(div);
+			physicalBoxes.push(div);
+		}
+		
 		function releaseBox(box) {
-			//var div = document.createElement("div");
+			console.log("releasing");
 			box.div.className = "box";
+			box.div.style.top = (box.y-(box.height/2))+"px";
+			box.div.style.left = (box.x-(box.width/2))+"px";
 			document.getElementById("gamewrap").appendChild(box.div);
 			physicalBoxes.push(box.div);
-			offsetX.push(-(box.width-(box.width/2))+PhysicsToCSSOffset);
-			offsetY.push(-(box.height-(box.height/2))+PhysicsToCSSOffset);
+			tempBoxDiv = new Box();
 		}
 		
 		function createDiv(box) {

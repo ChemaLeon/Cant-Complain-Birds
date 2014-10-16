@@ -1,0 +1,248 @@
+/*
+ * CSS Styles for angryPigs Demo App
+ *
+ * Copyright 2014, Vancouver Film School
+ *
+ */
+
+body {
+    background-color:black;
+}
+
+body,div {
+    margin:0;
+    padding:0;
+    border:none;
+    color:#fff;
+    background-color: grey;
+    font-family: "American Typewriter";
+}
+
+/* Styles for illustrating the example */
+a {
+    color:#FFF;
+    text-decoration:underline;
+}
+
+div > * {
+    margin: 10px;
+}
+
+div {
+    position: absolute;
+    background-color: #999;
+    /* border: 1px solid #FFF; */
+}
+            
+/* Styles for the experiment GUI */
+.panel {
+    font-size:16px;
+    position: fixed;
+    top:0;
+    right:1%;
+    width:12%;
+    z-index:2;
+    background-color: #555;
+    padding: 10px;
+}
+
+
+/* entities */
+.entity {
+    background-color:transparent;
+    background-size:100% 100%;
+    margin:0px;
+}
+
+
+.debug {
+    position:absolute;
+    background:transparent;
+    border:1px dashed red;
+    z-index: 6000;    
+}
+
+
+.obstacle {
+    colour: red;
+}
+
+
+.projectile_sample {
+    
+    width:50px;
+    height:50px;
+    
+    background-image:url("../images/pig.png");  /* Add your image url here */
+    background-size:100% 100%;
+                
+    -webkit-transform: translate(40px, 642px) rotate(15deg);
+    transform: translate(40px, 642px) rotate(15deg); 
+    
+    z-index:4500; 
+}
+
+
+.target_sample {
+    
+    width:32px;
+    height:32px;
+    
+    background-image:url("../images/bird.png");
+    background-size:128px 128px;
+    background-position:0px -96px;
+                
+    -webkit-transform: translate(764px, 720px) rotate(15deg);
+    transform: translate(764px, 720px) rotate(15deg); 
+
+
+    -webkit-animation: birdie-idle .6s steps(4) infinite;
+    -moz-animation: birdie-idle .6s steps(4) infinite;
+    -ms-animation: birdie-idle .6s steps(4) infinite;
+    -o-animation: birdie-idle .6s steps(4) infinite;
+    animation: birdie-idle .6s steps(4) infinite;
+                
+    z-index:7500; 
+}
+
+
+@-webkey-keyframes target-idle {
+    from { background-position: 0px -96px; }
+    to { background-position: -96px -96px; }
+}
+@keyframes target-idle {
+    from { background-position: 0px -96px; }
+    to { background-position: -96px -96px; }
+}
+
+#wrapper {
+    position: relative;
+    margin: 0 auto;
+    width: 1046px;
+    height:788px;                
+    border:1px solid white;
+
+    /* Set translateZ to trigger HW acc for CSS3 transforms
+    -webkit-transform: translate3d(0,0,1px);
+    -o-transform: translate3d(0,0,1px);
+    -moz-transform: translate3d(0,0,1px);
+    -ms-transform: translate3d(0,0,1px);
+    transform: translate3d(0,0,1px); */
+    
+    z-index:100;
+}
+
+#game-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    
+    width:1024px;
+    height:768px;                
+                   
+    background-color: black;
+    
+    -webkit-perspective: 1000; 
+    -webkit-backface-visibility: hidden;
+    -webkit-transition-property: -webkit-transform;
+    -webkit-transition-duration: 0.1;
+    
+    z-index:200;
+    overflow:hidden;
+}
+ 
+#title {
+    width: 60px; 
+    height: 100px; 
+    
+    background-image:url("../images/crate1.jpg");
+    background-size:100% 100%;
+    
+    -webkit-transform: translate(847px, 486px) rotate(22deg);
+    transform: translate(847px, 486px) rotate(22deg);
+}
+
+#about-nav {
+    width: 100px; 
+    height: 200px;
+
+    background-image:url("../images/strong-box.jpg");
+    background-size:100% 100%;
+     
+    -webkit-transform: translate(720px, 360px) rotate(68deg);
+    transform: translate(720px, 360px) rotate(68deg);
+}
+
+#pixels {
+    width: 400px; 
+    height: 150px;
+     
+    background-image:url("../images/strong-box.jpg");
+    background-size:100% 100%;
+     
+    -webkit-transform: translate(490px, 250px) rotate(0deg);
+    transform: translate(490px, 250px) rotate(0deg);
+}
+
+
+#crate-one {
+    width: 150px;
+    height: 150px;
+    
+    background-image:url("../images/crate1.jpg");
+    background-size:100% 100%;
+    
+    -webkit-transform: translate(573px, 605px) rotate(0deg);
+    transform: translate(573px, 605px) rotate(0deg);
+}
+
+#crate-two {
+    width: 200px; 
+    height: 200px; 
+    
+    background-image:url("../images/crate2.jpg");
+    background-size:100% 100%;
+    
+    -webkit-transform: translate(810px, 550px) rotate(0deg);
+    transform: translate(810px, 550px) rotate(0deg);
+}
+
+.cannon {
+    width: 150px; 
+    height: 150px; 
+    
+    top: 605px;
+    left: 0px;
+                    
+    background-image:url("../images/cannon.png");    
+    background-size:300px 150px;
+    
+    z-index: 5000;
+}
+
+#cannon-top {
+    background-position:-150px 0px;    
+
+    -webkit-transform: rotate(0deg);
+    transform: rotate(0deg);
+}
+
+#cannon-bottom {
+    background-position:0px 0px;   
+    z-index:5100; 
+}
+
+#launch-btn {
+    width: 80px; 
+    height: 80px; 
+
+    right: -113px;
+    top: 678px;
+                                                   
+    background-image:url("../images/launch.jpg");
+    background-size:200% 100%;
+    background-position:0px 0px;
+    
+    z-index: 10000;
+}       
+      
