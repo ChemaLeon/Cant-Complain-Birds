@@ -1,474 +1,109 @@
-<html>
+<!DOCTYPE html>
+<html lang="en">
 	<head>
-		<title>Can't Complain Birds</title>
-		<link rel="stylesheet" type="text/css" href="css/switch.css">
-		<style type="text/css">
-		body {
-			background-color: #eee;
-		}
-		div {
-			-webkit-touch-callout: none;
-			-webkit-user-select: none;
-			-khtml-user-select: none;
-			-moz-user-select: none;
-			-ms-user-select: none;
-			user-select: none;
-		}
-		#debug {
-			font-family: sans-serif;
-			font-size: 25px;
-		}
-		#gamewrap {
-			border-radius: 15px;
-			background-color: #bbb;
-			width: 1200px;
-			height: 800px;
-			position: absolute;
-			top: 8px;
-			z-index = -2;
-			overflow: hidden;
-		}
-		#cannon {
-			position: absolute;
-			top: 723px;
-		}
-		#cannon-body {
-			-webkit-transform-origin: 27% 70%;
-			position: absolute;
-			width: 100;
-			top: 22px;
-			left: 15px;
-			z-index: 2;
-		}
-		#cannon-base {
-			position: absolute;
-			width: 70px;
-			top: 52px;
-			left: 20px;
-			z-index: 3;
-		}
-		.marker {
-			position: absolute;
-			width: 10px;
-			z-index: 1;
-			opacity: 0.3;
-		}
-		.box {
-			position: absolute;
-			background: red;
-			opacity: 1;
-			border-radius: 10px;
-		}
-		.bullet {
-			position: absolute;
-			background: #52A3CC;
-			opacity: 1;
-		}
-		.tempBox {
-			position: absolute;
-			background: red;
-			opacity: 0.5;
-			border-radius: 10px;
-		}
-		.staticBox {
-			position: absolute;
-			background: black;
-			opacity: 0;
-		}
-		#sidebar {
-			position: absolute;
-			left: 1220px;
-			width: 300px;
-			height: 800px;
-			background-color: #ccc;
-			border-radius: 15px;
-			padding:0px;
-		}
-		.editor-switch .switch {
-			position: relative;
-			float: left;
-		}
-		.editor-switch .switch-label {
-			font-family: Bebas;
-			font-size: 21px;
-			margin: 0 40 0 0;
-			width: 100px;
-			float: left;
-			clear: left;
-		}
-		.editor-switch {
-			position: relative;
-			margin:15px;
-		}
-		@font-face {
-			font-family: Bebas;
-			src: url(css/BebasNeue.otf);
-		}
-		</style>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<meta name="description" content="">
+		<meta name="author" content="">
+		<link rel="icon" href="favicon.ico">
+
+		<title>Starter Template for Bootstrap</title>
+
+		<!-- Bootstrap core CSS -->
+		<link href="css/bootstrap.min.css" rel="stylesheet">
+		<link href="css/starter-template.css" rel="stylesheet">
+
+		<link href="css/bootstrap-theme.min.css" rel="stylesheet">
+
+		<link rel="stylesheet" type="text/css" href="css/bootstrap-switch.min.css">
+		<link rel="stylesheet" type="text/css" href="css/editorStyle.css">
 	</head>
+
 	<body>
-		<!--<canvas id="canvas" width="1280" height="800" style="float: left;"></canvas>-->
-		<div id="editor">
-			<div id="sidebar">
-				<div class="editor-switch" id="editorModeSwitch">
-					<div class="switch-label">editor mode</div>
-					<div class="switch" >
-						<input id="cmn-toggle-1" class="cmn-toggle cmn-toggle-round" type="checkbox" onclick="switchEditorMode();">
-						<label for="cmn-toggle-1"></label>
-					</div>
+		<div class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+			<div class="container">
+				<div class="navbar-header">
+					<button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target=".navbar-collapse">
+						<span class="sr-only">Toggle navigation</span>
+						<span class="icon-bar"></span>
+						<span class="icon-bar"></span>
+						<span class="icon-bar"></span>
+					</button>
+					<a class="navbar-brand" href="#">Can't Complain Birds</a>
 				</div>
-				<div class="editor-switch" id="snapToGridSwitch" style="display: none;">
-					<div class="switch-label">snap to grid</div>
-					<div class="switch" >
-						<input id="cmn-toggle-2" class="cmn-toggle cmn-toggle-round" type="checkbox" onclick="switchSnapToGrid();">
-						<label for="cmn-toggle-2"></label>
-					</div>
-				</div>
-			</div>
-			<div id="gamewrap">
-				<div id="markers">
-				</div>
+				<div class="collapse navbar-collapse">
+					<ul class="nav navbar-nav">
+						<li class="active"><a href="#">Home</a></li>
+						<li><a href="#about">About</a></li>
+						<li><a href="#contact">Contact</a></li>
+					</ul>
+				</div><!--/.nav-collapse -->
 			</div>
 		</div>
-		<div id="cannon">
-			<img id="cannon-body" src="img/cannon-body.png"></img>
-			<img id="cannon-base" src="img/cannon-base.png"></img>
-		</div>
-		
-		<div id="debug"></div>
-		<div id="shotMarker"></div>
-		<input type="range" name="widthSlider" id="widthSlider" value="50" min="2" max="300" onchange="changeBoxHeight(this.value)">
-		<input type="range" name="heightSlider" id="heightSlider" value="50" min="2" max="300" onchange="changeBoxWidth(this.value)">
-		
-	</body>
-	<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
-	<script type="text/javascript" src="js/Box2dWeb-2.1.a.3.min.js"></script>
-	<script type="text/javascript">
-		var frameRate = 60;
-		var numberOfMarkers = 35;
-		var markers = [];
-		
-		var worldWidth = 1200;
-		var worldHeight = 800;
-		var wallsWidth = 2;
-		var PhysicsToCSSOffset = 0;
-			
-		var worldScale = 30;
-		var physicalBoxes = [];
-		var offsetX = [];
-		var offsetY = [];
-		var startboxSizeX = 50;
-		var startboxSizeY = 50;
-		var boxBorder = 0;
-		var tempBoxDiv = new Box();
-		
-		var b2Vec2 = Box2D.Common.Math.b2Vec2;
-		var b2AABB = Box2D.Collision.b2AABB;
-		var b2BodyDef = Box2D.Dynamics.b2BodyDef;
-		var b2Body = Box2D.Dynamics.b2Body;
-		var b2FixtureDef = Box2D.Dynamics.b2FixtureDef;
-		var b2Fixture = Box2D.Dynamics.b2Fixture;
-		var b2World = Box2D.Dynamics.b2World;
-		var b2PolygonShape = Box2D.Collision.Shapes.b2PolygonShape;
-		var b2CircleShape = Box2D.Collision.Shapes.b2CircleShape;
-		var b2DebugDraw = Box2D.Dynamics.b2DebugDraw;
-		var world = new b2World(new b2Vec2(0, 10),true);
-			
-		var mouseDown;
-		var cannonPower = 100;
-		
-		var editorMode = false;
-		var snapToGridSize = 1;
-		var angleInDegrees = 0;
-		var bulletWidth = 20;
-		
-		$(document).ready(function() {
-			init();
-		})
-		
-		function init() {
-			//debugDraw();
-			createMarkers();			
-			
-			var boundingBox1 = new Box((worldWidth*0.5), worldHeight, worldWidth, wallsWidth);
-			var boundingBox2 = new Box((worldWidth*0.5), 0, worldWidth, wallsWidth);
-			var boundingBox3 = new Box(0, (worldHeight*0.5), wallsWidth, worldHeight);
-			var boundingBox4 = new Box(worldWidth, (worldHeight*0.5), wallsWidth, worldHeight);
-			
-			createBox(boundingBox1, b2Body.b2_staticBody);
-			createBox(boundingBox2, b2Body.b2_staticBody);
-			createBox(boundingBox3, b2Body.b2_staticBody);
-			createBox(boundingBox4, b2Body.b2_staticBody);
-			
-			window.setInterval(update,1000/frameRate);
-		}
-		
-		function update() {
-			if (editorMode) {
-				world.Step(0,10,10);
-			} else {
-				if (keyisdown)
-				{
-					world.Step(1/600*2,10,10);
-				} else {
-					world.Step(1/frameRate*2,10,10);
-				}
-			}
-			//world.DrawDebugData();
-			var i = physicalBoxes.length-1;
-			for (var b = world.GetBodyList(); b; b = b.GetNext())
-			{
-				if (b.GetNext() != null && b.GetType() == 2)
-				{
-					physicalBoxes[i].style.top = ((b.GetPosition().y*worldScale))-((parseInt(physicalBoxes[i].style.height)+(boxBorder*2))*0.5)+"px";
-					physicalBoxes[i].style.left = ((b.GetPosition().x*worldScale))-((parseInt(physicalBoxes[i].style.width)+(boxBorder*2))*0.5)+"px";
-					physicalBoxes[i].style.webkitTransform = "rotate("+(b.GetAngle()*(180/Math.PI))+"deg)";
-				}
-				i--;
-			}
-			//console.log(world.GetBodyCount());
-			world.ClearForces();
-		}
-		
-		// -------------------------------- EVENT LISTENERS START -------------------------------- //
-		document.addEventListener("mouseup",function(e) {
-			if (mouseDown && editorMode)
-			{
-				spawnBox(tempBoxDiv);
-			}
-			mouseDown = false;
-		});
-		
-		document.getElementById("gamewrap").addEventListener("mousedown",function(e) {
-			mouseDown = true;
-			if (editorMode)
-			{
-				createTempBox(e.clientX, e.clientY, startboxSizeX, startboxSizeY);
-			} else {
-				shootBullet();
-			}
-		});
-		
-		document.getElementById("gamewrap").addEventListener("mousemove",function(e) {
-			if (!editorMode)
-			{
-				updateMarkers(e);
-			}
-			if (mouseDown && editorMode)
-			{
-				if (tempBoxDiv.div != null)
-				{
-					updateTempBox(e.clientX, e.clientY);
-				}
-			}
-		});
-		
-		document.getElementById("gamewrap").addEventListener("mousewheel", function(e) {
-			var delta = Math.max(-1, Math.min(1, (e.wheelDelta || -e.detail)));
-			cannonPower += delta;
-			updateMarkers(e);
-		});
-		// --------------------------------  EVENT LISTENERS END  -------------------------------- //
-		
-		function switchEditorMode() {
-			editorMode  = !editorMode;
-			if (editorMode)
-			{
-				document.getElementById("gamewrap").style.backgroundImage = "url(img/grid.png)";
-				document.getElementById("snapToGridSwitch").style.display = "";
+
+		<div class="container">
+			<div class="starter-template">
+				<h1>Can't Complain Birds</h1>
+				<span class="label label-default">Editor</span>
+				<input type="checkbox" name="editorModeSwitch" data-size="mini">
+				<span class="label label-default">Snap</span>
+				<input type="checkbox" name="snapToGridSwitch" data-size="mini" disabled checked>
+				<div class="btn-group pull-right">
+					<button type="button" class="btn btn-primary btn-xs dropdown-toggle" data-toggle="dropdown">load level <span class="caret"></span></button>
+					<ul class="dropdown-menu" role="menu">
+					    <li><a href="#">Action</a></li>
+					    <li><a href="#">Another action</a></li>
+					    <li><a href="#">Something else here</a></li>
+					    <li class="divider"></li>
+					    <li><a href="#">Separated link</a></li>
+				  	</ul>
+			  	</div>
+				<button type="button" class="btn btn-success btn-xs pull-right" id="saveLevelButton" disabled="disabled" style="margin: 0 10px 0 0;" data-toggle="modal" data-target="#myModal">save level <span class="glyphicon glyphicon-save"></span></button>
+				<div id="editor">
+					<div id="gamewrap">
+						<div id="markers"></div>
+						<div id="cannon">
+							<img id="cannon-body" src="img/cannon-body.png">
+							<img id="cannon-base" src="img/cannon-base.png">
+						</div>
+					</div>
+				</div>
+
+				<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+					<div class="modal-dialog">
+						<div class="modal-content">
+							<div class="modal-header">
+								<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">×</span><span class="sr-only">Close</span></button>
+								<h4 class="modal-title">Save Level</h4>
+							</div>
+							<div class="modal-body">
+								<p>Are you sure you want to save this level?</p>
+							</div>
+							<div class="modal-footer">
+								<button type="button" class="btn btn-danger" data-dismiss="modal">Cancel</button>
+								<button type="button" class="btn btn-success">Save changes</button>
+							</div>
+						</div><!-- /.modal-content -->
+					</div><!-- /.modal-dialog -->
+				</div>
+
+				<h1><a href="#" name="about"></a>About</h1>
+				<p>Can't Complain Birds is a physics web-based level editor made with JavaScript and CSS. It uses Box2DWeb which is a ported JavaScript physics engine from ActionScript 3. Every element on the editor is an HTML element transformed by CSS functions.</p>
+
+				<iframe src="http://ghbtns.com/github-btn.html?user=Kubiyo&repo=Cant-Complain-Birds&type=follow&count=true&size=large" allowtransparency="true" frameborder="0" scrolling="0" width="220" height="30"></iframe>
 				
-			} else {
-				document.getElementById("gamewrap").style.backgroundImage = "";
-				document.getElementById("snapToGridSwitch").style.display = "none";
-			}
-		}
-		
-		function switchSnapToGrid() {
-			if (snapToGridSize == 1)
-			{
-				snapToGridSize = 25;
-			} else {
-				snapToGridSize = 1;
-			}
-		}
-		
-		function createMarkers() {
-			for (var i=0; i < numberOfMarkers; i++)
-			{
-				var img = document.createElement("img");
-				img.className = "marker";
-				img.src = "img/marker.png";
-				document.getElementById("markers").appendChild(img);
-				markers.push(img);
-			}
-		}
-		
-		function updateMarkers(e) {
-			var cannonOrigin = { x:50, y:777 };
-			var mouseOrigin = { x:e.clientX, y:e.clientY };
-			var deltaX = (mouseOrigin.x-cannonOrigin.x);
-			var deltaY = (mouseOrigin.y-cannonOrigin.y);
-			var angleInRadians =  Math.atan(deltaY / deltaX);
-			angleInDegrees = angleInRadians * 180 / Math.PI;
-			//var shotMarker = document.getElementById("shotMarker");
-			var cannonBody = document.getElementById("cannon-body");
-			//shotMarker.style.left = cannonOrigin.x+"px";
-			//shotMarker.style.top = cannonOrigin.y+"px";
-			//shotMarker.style.width = (Math.sqrt(Math.pow(deltaX,2)+Math.pow(deltaY,2))-3)+"px";
-			//shotMarker.style.width = cannonPower+"px";
-			//shotMarker.style.height = 2+"px";
-			//shotMarker.style.transform = 'rotate('+angleInDegrees+'deg)';
-			cannonBody.style.transform = 'rotate('+angleInDegrees+'deg)';
-			for (var i = 0; i < markers.length; i++)
-			{
-				markers[i].style.left = cannonOrigin.x+(cannonPower*i*Math.cos(-angleInRadians))-15+"px";
-				markers[i].style.top = cannonOrigin.y-((cannonPower*i*Math.sin(-angleInRadians))-0.5*9.8*(Math.pow(i,2)))-15+"px";
-			}
-		}
-		
-		function changeBoxWidth(value) {
-			startboxSizeX = value;
-		}
-		
-		function changeBoxHeight(value) {
-			startboxSizeY = value;
-		}
-		
-		function Box(xPos, yPos, width, height) {
-			this.x = xPos;
-			this.y = yPos;
-			this.width = width;
-			this.height = height;
-			this.div = null;
-		}
-		
-		function createTempBox(xPos, yPos, width, height) {
-			tempBoxDiv = new Box();
-			var div = document.createElement("div");
-			div.className = "tempBox";
-			xPos = xPos - xPos%snapToGridSize;
-			yPos = yPos - yPos%snapToGridSize;
-			div.style.left = (xPos - PhysicsToCSSOffset)-((width-(boxBorder*2))/2)+PhysicsToCSSOffset+"px";
-			div.style.top =  (yPos - PhysicsToCSSOffset)-((height-(boxBorder*2))/2)+PhysicsToCSSOffset+"px";
-			div.style.width = (width-(boxBorder*2))+"px";
-			div.style.height = (height-(boxBorder*2))+"px";
-			div.style.border = boxBorder+"px solid black";
-			document.getElementById("gamewrap").appendChild(div);
-			tempBoxDiv.x = xPos;
-			tempBoxDiv.y = yPos;
-			tempBoxDiv.width = width;
-			tempBoxDiv.height = height;
-			tempBoxDiv.div = div;
-		}
-		
-		function updateTempBox(xPos, yPos) {
-			tempBoxDiv.x = xPos - xPos%snapToGridSize;
-			tempBoxDiv.y = yPos - yPos%snapToGridSize;
-			tempBoxDiv.div.style.left = (tempBoxDiv.x - PhysicsToCSSOffset)-((tempBoxDiv.width)/2)+PhysicsToCSSOffset+"px";
-			tempBoxDiv.div.style.top =  (tempBoxDiv.y - PhysicsToCSSOffset)-((tempBoxDiv.height)/2)+PhysicsToCSSOffset+"px";
-		}
-		
-		function spawnBox(box) {
-			var boxSizeX = startboxSizeX;
-			var boxSizeY = startboxSizeY;
-			var randomX = Math.random()*0;
-			var randomY = Math.random()*0;
-			boxSizeX += randomX;
-			boxSizeY += randomY;
-			box.x = (box.x-PhysicsToCSSOffset);
-			box.y = (box.y-PhysicsToCSSOffset);
-			createBox(box, b2Body.b2_dynamicBody);
-		}
-		
-		function createBox(box, type) {
-			var bodyDef = new b2BodyDef;
-			bodyDef.type = type;
-			bodyDef.position.Set(box.x/worldScale,box.y/worldScale);
-			var polygonShape = new b2PolygonShape;
-			polygonShape.SetAsBox(box.width/2/worldScale,box.height/2/worldScale);
-			var fixtureDef = new b2FixtureDef;
-			fixtureDef.density = 1.0;
-			fixtureDef.friction = 0.6;
-			fixtureDef.restitution = 0.1;
-			fixtureDef.shape = polygonShape;
-			var body=world.CreateBody(bodyDef);
-			body.CreateFixture(fixtureDef);
-			if (type != b2Body.b2_staticBody)
-			{
-				releaseBox(box);
-			} else {
-				createDiv(box);
-			}
-		}
-		
-		function shootBullet() {
-			var bodyDef = new b2BodyDef;
-			bodyDef.type = b2Body.b2_dynamicBody;
-			bodyDef.position.Set(35/worldScale,780/worldScale);
-			var circleShape = new b2CircleShape;
-			circleShape.SetRadius((bulletWidth*0.5)/worldScale);
-			var fixtureDef = new b2FixtureDef;
-			fixtureDef.density = 10.0;
-			fixtureDef.friction = 1.0;
-			fixtureDef.restitution = 0.5;
-			fixtureDef.shape = circleShape;
-			var body=world.CreateBody(bodyDef);
-			body.CreateFixture(fixtureDef);
-			var power = cannonPower*0.0654*fixtureDef.density;
-			var vector = new b2Vec2(Math.cos(angleInDegrees*(Math.PI/180))*power, Math.sin(angleInDegrees*(Math.PI/180))*power);
-    
-			body.ApplyImpulse(vector, body.GetWorldCenter());
-			
-			var div = document.createElement("div");
-			div.className = "bullet";
-			div.style.top = -50+"px";
-			div.style.left = -50+"px";
-			div.style.width = bulletWidth+"px";
-			div.style.height = bulletWidth+"px";
-			div.style.borderRadius = bulletWidth*0.5+"px";
-			document.getElementById("gamewrap").appendChild(div);
-			physicalBoxes.push(div);
-		}
-		
-		function releaseBox(box) {
-			console.log("releasing");
-			box.div.className = "box";
-			box.div.style.top = (box.y-(box.height/2))+"px";
-			box.div.style.left = (box.x-(box.width/2))+"px";
-			document.getElementById("gamewrap").appendChild(box.div);
-			physicalBoxes.push(box.div);
-			tempBoxDiv = new Box();
-		}
-		
-		function createDiv(box) {
-			var div = document.createElement("div");
-			div.className = "staticBox";
-			div.style.top = (box.y-(box.height/2)+PhysicsToCSSOffset)+"px";
-			div.style.left = (box.x-(box.width/2)+PhysicsToCSSOffset)+"px";
-			div.style.width = box.width+"px";
-			div.style.height = box.height+"px";
-			document.getElementById("gamewrap").appendChild(div);
-		}
-		
-		function debugDraw(){
-			var debugDraw = new b2DebugDraw();
-			debugDraw.SetSprite(document.getElementById("canvas").getContext("2d"));
-			debugDraw.SetDrawScale(30.0);
-			debugDraw.SetFillAlpha(1.0);
-			debugDraw.SetLineThickness(5.0);
-			debugDraw.SetFlags(b2DebugDraw.e_shapeBit | b2DebugDraw.e_jointBit);
-			world.SetDebugDraw(debugDraw);
-		}
-		
-		var keyisdown = false;
-		$('body').bind('keydown',function(e){
-			var keycode = 73;
-			if (e.which === keycode) {
-				keyisdown = true;
-			}
-		}).bind('keyup',function(){
-			keyisdown = false;
-		});
-		
-	</script>
+				<h1><a href="#" name="contact"></a>Contact</h1>
+			</div>
+		</div><!-- /.container -->
+
+		<!-- Bootstrap core JavaScript
+		================================================== -->
+		<!-- Placed at the end of the document so the pages load faster -->
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+		<script src="js/bootstrap.min.js"></script>
+		<script type="text/javascript" src="js/Box2dWeb-2.1.a.3.min.js"></script>
+		<script type="text/javascript" src="js/bootstrap-switch.min.js"></script>
+		<script type="text/javascript" src="js/CantComplainBirds.js"></script>
+	</body>
 </html>
